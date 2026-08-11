@@ -442,13 +442,9 @@ export class GameScene extends Phaser.Scene {
     this.#grenadeKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     const requestBonus = (): void => {
       if (this.time.now <= this.#grenadeLauncherUntil) return;
-      const parentWindow = window.parent as Window & {
-        condamineOpenBonusQuestion?: () => void;
-      };
-      if (typeof parentWindow.condamineOpenBonusQuestion === 'function') {
-        parentWindow.condamineOpenBonusQuestion();
-        return;
-      }
+      // The game is hosted on a different origin from CondaWeb. Accessing a
+      // property on window.parent therefore throws a SecurityError. The
+      // postMessage bridge is the cross-origin-safe communication channel.
       window.parent.postMessage(
         { source: 'condamine-game', type: 'request-bonus-question' },
         '*',

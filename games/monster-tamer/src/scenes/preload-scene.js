@@ -38,6 +38,10 @@ export class PreloadScene extends BaseScene {
   preload() {
     super.preload();
 
+    // Keep every Phaser request inside /monster-tamer even when the page was
+    // opened without a trailing slash (otherwise Vercel resolves assets at /).
+    this.load.setBaseURL('/monster-tamer/');
+
     const monsterTamerAssetPath = 'assets/images/monster-tamer';
     const kenneysAssetPath = 'assets/images/kenneys-assets';
     const pimenAssetPath = 'assets/images/pimen';
