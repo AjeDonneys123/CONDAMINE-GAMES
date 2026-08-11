@@ -19,6 +19,14 @@
 
   window.addEventListener('message', (event) => {
     if (event.source !== window.parent || event.data?.source !== 'condamine') return;
+    if (event.data.type === 'simulate-key') {
+      const code = String(event.data.code || 'Space');
+      const key = String(event.data.key || (code === 'Space' ? ' ' : code.replace(/^Key/, '')));
+      const init = { key, code, bubbles: true, cancelable: true };
+      window.dispatchEvent(new KeyboardEvent('keydown', init));
+      setTimeout(() => window.dispatchEvent(new KeyboardEvent('keyup', init)), 50);
+      return;
+    }
     if (event.data.type === 'game-context') context = event.data.context || null;
     emit(event.data.type, event.data);
   });

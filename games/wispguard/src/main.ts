@@ -6,7 +6,7 @@ import { UiScene } from './scenes/ui-scene';
 import { GameOverScene } from './scenes/game-over-scene';
 
 const gameConfig: Phaser.Types.Core.GameConfig = {
-  type: Phaser.WEBGL,
+  type: Phaser.AUTO,
   pixelArt: true,
   roundPixels: true,
   scale: {
