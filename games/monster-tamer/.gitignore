@@ -1,6 +1,4 @@
-/assets/images
-/assets/fonts
-/assets/audio
+# Runtime media must be versioned: Vercel builds the game from this repository.
 .DS_Store
 tasks-wip.todo
 notes.md
