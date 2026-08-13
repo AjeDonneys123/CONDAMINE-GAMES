@@ -54,3 +54,41 @@ game.scene.add(SCENE_KEYS.GAME_SCENE, GameScene);
 game.scene.add(SCENE_KEYS.UI_SCENE, UiScene);
 game.scene.add(SCENE_KEYS.GAME_OVER_SCENE, GameOverScene);
 game.scene.start(SCENE_KEYS.PRELOAD_SCENE);
+
+const createMobileControls = (): void => {
+  const controls = document.createElement('div');
+  controls.className = 'mobile-game-controls';
+  controls.innerHTML = `
+    <div class="mobile-dpad">
+      <button data-code="ArrowUp" aria-label="Haut">▲</button>
+      <button data-code="ArrowLeft" aria-label="Gauche">◀</button>
+      <button data-code="ArrowDown" aria-label="Bas">▼</button>
+      <button data-code="ArrowRight" aria-label="Droite">▶</button>
+    </div>
+    <div class="mobile-actions">
+      <button class="attack" data-code="KeyZ" aria-label="Épée">Z</button>
+      <button class="action" data-code="KeyX" aria-label="Prendre">X</button>
+      <button class="wide" data-code="Enter" aria-label="Valider">OK</button>
+      <button class="wide" data-code="Space" aria-label="Question">★</button>
+    </div>`;
+  controls.querySelectorAll<HTMLButtonElement>('button').forEach((button) => {
+    const send = (pressed: boolean): void => window.postMessage({
+      source: 'condamine', type: 'key-state', code: button.dataset.code, pressed
+    }, '*');
+    const release = (event: PointerEvent): void => {
+      event.preventDefault();
+      send(false);
+    };
+    button.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      button.setPointerCapture?.(event.pointerId);
+      send(true);
+    });
+    button.addEventListener('pointerup', release);
+    button.addEventListener('pointercancel', release);
+    button.addEventListener('contextmenu', (event) => event.preventDefault());
+  });
+  document.body.appendChild(controls);
+};
+
+createMobileControls();
