@@ -38,3 +38,20 @@ game.scene.add(SCENE_KEYS.INVENTORY_SCENE, InventoryScene);
 game.scene.add(SCENE_KEYS.CUTSCENE_SCENE, CutsceneScene);
 game.scene.add(SCENE_KEYS.DIALOG_SCENE, DialogScene);
 game.scene.start(SCENE_KEYS.PRELOAD_SCENE);
+
+const keepMobileGameActive = () => {
+  if (document.hidden) return;
+  game.loop?.wake?.();
+  const audioContext = game.sound?.context;
+  if (audioContext?.state === 'suspended') audioContext.resume().catch(() => {});
+  if (game.sound?.locked) game.sound.unlock?.();
+};
+
+window.addEventListener('message', (event) => {
+  if (event.data?.source === 'condamine' && event.data.type === 'mobile-activate') {
+    keepMobileGameActive();
+  }
+});
+window.addEventListener('focus', keepMobileGameActive);
+window.addEventListener('pageshow', keepMobileGameActive);
+document.addEventListener('visibilitychange', keepMobileGameActive);
