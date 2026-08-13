@@ -474,7 +474,20 @@ export class GameScene extends Phaser.Scene {
       // Le jeu est servi depuis CONDAMINE-GAMES et CondaWeb depuis une autre
       // origine. La source de la fenêtre et la signature du message constituent
       // ici la frontière de confiance, plutôt qu'une égalité d'origines.
-      if (event.source !== window.parent || event.data?.source !== 'condamine') return;
+      if ((event.source !== window.parent && event.source !== window) || event.data?.source !== 'condamine') return;
+      if (event.data.type === 'key-state') {
+        const code = String(event.data.code || '');
+        this.#controls.setVirtualKey(code, event.data.pressed !== false);
+        if (code === 'Space' && event.data.pressed !== false) requestBonus();
+        return;
+      }
+      if (event.data.type === 'simulate-key') {
+        const code = String(event.data.code || '');
+        this.#controls.setVirtualKey(code, true);
+        if (code === 'Space') requestBonus();
+        this.time.delayedCall(100, () => this.#controls.setVirtualKey(code, false));
+        return;
+      }
       if (event.data.type === 'quiz-open') {
         this.scene.pause();
         return;

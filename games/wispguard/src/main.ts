@@ -88,7 +88,10 @@ const createMobileControls = (): void => {
     button.addEventListener('pointercancel', release);
     button.addEventListener('contextmenu', (event) => event.preventDefault());
   });
+  controls.addEventListener('contextmenu', (event) => event.preventDefault());
+  controls.addEventListener('selectstart', (event) => event.preventDefault());
   document.body.appendChild(controls);
 };
 
 createMobileControls();
+document.getElementById('game-container')?.addEventListener('contextmenu', (event) => event.preventDefault());
