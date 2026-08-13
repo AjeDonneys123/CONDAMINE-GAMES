@@ -14,6 +14,7 @@ import { DialogScene } from './scenes/dialog-scene.js';
 
 const game = new Phaser.Game({
   type: Phaser.CANVAS,
+  disableVisibilityChange: true,
   pixelArt: false,
   scale: {
     parent: 'game-container',
