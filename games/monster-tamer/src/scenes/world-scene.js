@@ -155,7 +155,7 @@ export class WorldScene extends BaseScene {
     // During a new game flow, find the players starting location from the map data, and update
     // the data manager. Originally, this was a hard coded value, and was updated to be dynamic
     // based on our level data in Tiled.
-    let isNewGame = !(dataManager.store.get(DATA_MANAGER_STORE_KEYS.GAME_STARTED) || false);
+    const isNewGame = !(dataManager.store.get(DATA_MANAGER_STORE_KEYS.GAME_STARTED) || false);
     if (isNewGame) {
       // find player spawn location and update the data manager
       const map = this.#getLevelTileMap(WORLD_ASSET_KEYS.MAIN_1_LEVEL);
@@ -165,6 +165,22 @@ export class WorldScene extends BaseScene {
         y: playerSpawnLocationObject.y - TILE_SIZE,
       });
     }
+
+    // Démarrage pédagogique direct : aucun passage par les deux scènes du
+    // professeur. Les anciennes sauvegardes restées sans créature sont aussi
+    // réparées automatiquement.
+    const currentParty = dataManager.store.get(DATA_MANAGER_STORE_KEYS.MONSTERS_IN_PARTY) || [];
+    if (currentParty.length === 0) {
+      const starter = DataUtils.getMonsterById(this, 1);
+      if (starter) {
+        starter.learningLessonIndex = 0;
+        dataManager.store.set(DATA_MANAGER_STORE_KEYS.MONSTERS_IN_PARTY, [starter]);
+      }
+    }
+    dataManager.viewedEvent(1);
+    dataManager.viewedEvent(2);
+    dataManager.removeFlag('LOOKING_FOR_PROFESSOR');
+    dataManager.addFlag('FOUND_PROFESSOR');
 
     dataManager.store.set(
       DATA_MANAGER_STORE_KEYS.PLAYER_LOCATION,
@@ -318,6 +334,11 @@ export class WorldScene extends BaseScene {
     this.scene.launch(SCENE_KEYS.DIALOG_SCENE);
     this.#dialogUi = /** @type {DialogScene} */ (this.scene.get(SCENE_KEYS.DIALOG_SCENE));
     this.#specialEncounterTileImageGameObjectGroup = this.add.group({ classType: Phaser.GameObjects.Image });
+    const cleanupSaveListener = window.CondaWebGame?.on('save-game', () => {
+      dataManager.saveData();
+      this.#dialogUi.showDialogModal(['Progression sauvegardée.']);
+    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => cleanupSaveListener?.());
   }
 
   /**
@@ -604,14 +625,20 @@ export class WorldScene extends BaseScene {
         this.#encounterZonePlayerIsEntering.layer.properties
       ).find((property) => property.name === TILED_ENCOUNTER_PROPERTY.AREA).value;
       const possibleMonsters = DataUtils.getEncounterAreaDetails(this, encounterAreaId);
-      const randomMonsterId = weightedRandom(possibleMonsters);
+      const lessonCount = Math.max(1, (window.CondaWebGame?.getLessons?.() || []).length);
+      // Une espèce stable par leçon dans toute la région pédagogique proche.
+      const lessonSpecies = [2, 3, 4, 5, 1].slice(0, Math.min(5, lessonCount));
+      const lessonIndex = Phaser.Math.Between(0, Math.max(0, lessonSpecies.length - 1));
+      const randomMonsterId = lessonSpecies[lessonIndex] || weightedRandom(possibleMonsters);
+      const encounteredMonster = DataUtils.getMonsterById(this, randomMonsterId);
+      encounteredMonster.learningLessonIndex = lessonIndex;
 
       console.log(
         `[${WorldScene.name}:handlePlayerMovementUpdate] player encountered a wild monster in area ${encounterAreaId} and monster id has been picked randomly ${randomMonsterId}`
       );
       /** @type {import('./battle-scene.js').BattleSceneData} */
       const dataToPass = {
-        enemyMonsters: [DataUtils.getMonsterById(this, randomMonsterId)],
+        enemyMonsters: [encounteredMonster],
         playerMonsters: dataManager.store.get(DATA_MANAGER_STORE_KEYS.MONSTERS_IN_PARTY),
       };
       this.#startBattleScene(dataToPass);
