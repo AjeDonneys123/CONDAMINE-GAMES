@@ -106,6 +106,18 @@ export class BattleScene extends BaseScene {
   #availableMonstersUiContainerForNpc;
   /** @type {EnemyBattleNpc | undefined} */
   #enemyBattleNpc;
+  /** @type {object | null} */
+  #currentDefensivePosture;
+  /** @type {Phaser.GameObjects.Container | null} */
+  #defensivePostureContainer;
+  /** @type {(() => void) | null} */
+  #cleanupContextListener;
+  /** @type {number} */
+  #expectedPlayerAttackIndex;
+  /** @type {number} */
+  #playerAttackMultiplier;
+  /** @type {number} */
+  #playerQuizCorrectIndex;
 
   constructor() {
     super({
@@ -149,6 +161,13 @@ export class BattleScene extends BaseScene {
     if (chosenBattleSceneOption === undefined || chosenBattleSceneOption === BATTLE_SCENE_OPTIONS.ON) {
       this.#skipAnimations = false;
     }
+
+    this.#currentDefensivePosture = null;
+    this.#defensivePostureContainer = null;
+    this.#cleanupContextListener = null;
+    this.#expectedPlayerAttackIndex = -1;
+    this.#playerAttackMultiplier = 1;
+    this.#playerQuizCorrectIndex = -1;
   }
 
   /**
@@ -187,6 +206,19 @@ export class BattleScene extends BaseScene {
 
     // render out the main info and sub info panes
     this.#battleMenu = new BattleMenu(this, this.#activePlayerMonster, this.#skipAnimations, this.#isTrainerBattle);
+    this.#updateMonsterDetailsFromActiveLesson();
+
+    this.#cleanupContextListener = window.CondaWebGame?.on('game-context', () => {
+      this.#updateMonsterDetailsFromActiveLesson();
+    });
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      if (this.#cleanupContextListener) {
+        this.#cleanupContextListener();
+      }
+      this.#hideDefensivePosture();
+    });
+
     this.#createBattleStateMachine();
     this.#attackManager = new AttackManager(this, this.#skipAnimations);
     this.#createAvailableMonstersUi();
@@ -263,6 +295,7 @@ export class BattleScene extends BaseScene {
         return;
       }
       this.#activePlayerAttackIndex = this.#battleMenu.selectedAttack;
+      this.#playerAttackMultiplier = this.#activePlayerAttackIndex === this.#playerQuizCorrectIndex ? 1.8 : 0.55;
 
       if (!this.#activePlayerMonster.attacks[this.#activePlayerAttackIndex]) {
         return;
@@ -311,7 +344,7 @@ export class BattleScene extends BaseScene {
             ATTACK_TARGET.ENEMY,
             () => {
               this.#activeEnemyMonster.playTakeDamageAnimation(() => {
-                this.#activeEnemyMonster.takeDamage(this.#activePlayerMonster.baseAttack, () => {
+                this.#activeEnemyMonster.takeDamage(Math.max(1, Math.round(this.#activePlayerMonster.baseAttack * this.#playerAttackMultiplier)), () => {
                   callback();
                 });
               });
@@ -332,10 +365,10 @@ export class BattleScene extends BaseScene {
       return;
     }
 
-    this.#battleMenu.updateInfoPaneMessageNoInputRequired(
+    this.#requestEnemyQuiz().then((quizSuccess) => this.#battleMenu.updateInfoPaneMessageNoInputRequired(
       `foe ${this.#activeEnemyMonster.name} used ${
         this.#activeEnemyMonster.attacks[this.#activeEnemyAttackIndex].name
-      }`,
+      } (${quizSuccess ? 'attaque atténuée' : 'attaque renforcée'})`,
       () => {
         // play attack animation based on the selected attack
         // when attack is finished, play damage animation and then update health bar
@@ -348,7 +381,8 @@ export class BattleScene extends BaseScene {
             ATTACK_TARGET.PLAYER,
             () => {
               this.#activePlayerMonster.playTakeDamageAnimation(() => {
-                this.#activePlayerMonster.takeDamage(this.#activeEnemyMonster.baseAttack, () => {
+                const multiplier = quizSuccess ? 0.35 : 1.8;
+                this.#activePlayerMonster.takeDamage(Math.max(1, Math.round(this.#activeEnemyMonster.baseAttack * multiplier)), () => {
                   callback();
                 });
               });
@@ -356,7 +390,7 @@ export class BattleScene extends BaseScene {
           );
         });
       }
-    );
+    ));
   }
 
   /**
@@ -565,8 +599,8 @@ export class BattleScene extends BaseScene {
     this.#battleStateMachine.addState({
       name: BATTLE_STATES.PLAYER_INPUT,
       onEnter: () => {
+        this.#preparePlayerQuiz();
         this._controls.lockInput = false;
-        this.#battleMenu.showMainBattleMenu();
       },
     });
 
@@ -833,6 +867,7 @@ export class BattleScene extends BaseScene {
         const nextMonster = this.#sceneData.enemyMonsters[this.#activeEnemyMonsterPartyIndex];
         this.#showMessagesAndWaitForInput([`Foe is about to send in ${nextMonster.name}.`], () => {
           this.#activeEnemyMonster.switchMonster(nextMonster);
+          this.#updateMonsterDetailsFromActiveLesson();
           // have monster appear, and show updated health bar
           this.#activeEnemyMonster.playMonsterAppearAnimation(() => {
             this.#activeEnemyMonster.playMonsterHealthBarAppearAnimation(() => {
@@ -967,6 +1002,7 @@ export class BattleScene extends BaseScene {
     this.#activePlayerMonster.playDeathAnimation(() => {
       this.#activePlayerMonsterPartyIndex = data.selectedMonsterIndex;
       this.#activePlayerMonster.switchMonster(this.#sceneData.playerMonsters[data.selectedMonsterIndex]);
+      this.#updateMonsterDetailsFromActiveLesson();
       this.#battleMenu.updateMonsterAttackSubMenu();
       this._controls.lockInput = false;
       this.#battleStateMachine.setState(BATTLE_STATES.BRING_OUT_MONSTER);
@@ -1021,6 +1057,88 @@ export class BattleScene extends BaseScene {
     this.#battleMenu.updateInfoPaneMessagesAndWaitForInput(messages, () => {
       this._controls.lockInput = true;
       callback();
+    });
+  }
+
+  #getEnemyLesson() {
+    const lessons = window.CondaWebGame?.getLessons?.() || [];
+    if (!lessons.length) return null;
+    return lessons[this.#activeEnemyMonster.learningLessonIndex % lessons.length] || lessons[0];
+  }
+
+  #getPlayerLesson() {
+    const lessons = window.CondaWebGame?.getLessons?.() || [];
+    if (!lessons.length) return null;
+    return lessons[this.#activePlayerMonster.learningLessonIndex % lessons.length] || lessons[0];
+  }
+
+  #updateMonsterDetailsFromActiveLesson() {
+    const lesson = this.#getEnemyLesson();
+    if (!lesson || !this.#activeEnemyMonster || !this.#activePlayerMonster) return;
+    const playerLesson = this.#getPlayerLesson() || lesson;
+    const enemyAttackNames = (lesson.mainPoints || []).map((point, index) => `${index + 1}-${point.attackCue || point.text}`);
+    const playerAttackNames = (playerLesson.mainPoints || []).map((point, index) => `${index + 1}-${point.attackCue || point.text}`);
+    this.#activeEnemyMonster.setLearningIdentity(lesson.title, enemyAttackNames);
+    this.#activePlayerMonster.setLearningIdentity(playerLesson.title, playerAttackNames);
+    this.#battleMenu?.updateMonsterAttackSubMenu();
+  }
+
+  #preparePlayerQuiz() {
+    this.#hideDefensivePosture();
+    const lesson = this.#getPlayerLesson();
+    const quiz = Array.isArray(lesson?.quiz) ? lesson.quiz : [];
+    if (!quiz.length) {
+      this.#playerQuizCorrectIndex = 0;
+      this.#battleMenu.showQuizAttackMenu(`Leçon : ${lesson?.title || 'Révision'}`, this.#activePlayerMonster.attacks.map((attack) => attack.name));
+      return;
+    }
+    const question = quiz[Phaser.Math.Between(0, quiz.length - 1)];
+    const choices = (question.choices || []).slice(0, 4);
+    this.#playerQuizCorrectIndex = Math.max(0, Math.min(choices.length - 1, Number(question.correctIndex || 0)));
+    this.#activePlayerMonster.setLearningIdentity(lesson.title, choices);
+    this.#battleMenu.showQuizAttackMenu(question.question, choices);
+  }
+
+  #prepareDefensivePosture() {
+    this.#hideDefensivePosture();
+    const lesson = this.#getPlayerLesson();
+    const points = (lesson?.mainPoints || []).slice(0, this.#activePlayerMonster.attacks.length);
+    if (!points.length) {
+      this.#expectedPlayerAttackIndex = -1;
+      return;
+    }
+    this.#expectedPlayerAttackIndex = Phaser.Math.Between(0, points.length - 1);
+    const point = points[this.#expectedPlayerAttackIndex];
+    const clues = [...(point.subPoints || []), ...(point.keywords || [])].filter(Boolean);
+    const clue = clues.length ? clues[Phaser.Math.Between(0, clues.length - 1)] : point.text;
+    const panel = this.add.rectangle(512, 238, 680, 76, 0x111827, 0.94).setStrokeStyle(3, 0xfacc15);
+    const label = this.add.text(512, 225, 'LE POKÉMON SE DÉFEND :', {
+      fontFamily: 'Arial', fontSize: '16px', color: '#fde047', fontStyle: 'bold', align: 'center'
+    }).setOrigin(0.5);
+    const text = this.add.text(512, 250, clue, {
+      fontFamily: 'Arial', fontSize: '17px', color: '#ffffff', align: 'center', wordWrap: { width: 620 }
+    }).setOrigin(0.5);
+    this.#defensivePostureContainer = this.add.container(0, 0, [panel, label, text]).setDepth(100);
+  }
+
+  #hideDefensivePosture() {
+    this.#defensivePostureContainer?.destroy(true);
+    this.#defensivePostureContainer = null;
+  }
+
+  #requestEnemyQuiz() {
+    this.#hideDefensivePosture();
+    const lesson = this.#getEnemyLesson();
+    if (!lesson || !window.CondaWebGame) return Promise.resolve(true);
+    return new Promise((resolve) => {
+      let settled = false;
+      const cleanup = window.CondaWebGame.on('qcm-result', (event) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve(event?.success === true);
+      });
+      window.CondaWebGame.send('request-qcm', { lessonId: lesson.id, lessonTitle: lesson.title });
     });
   }
 }

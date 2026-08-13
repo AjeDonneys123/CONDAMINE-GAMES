@@ -17,7 +17,15 @@ const BATTLE_MENU_CURSOR_POS = Object.freeze({
 
 const ATTACK_MENU_CURSOR_POS = Object.freeze({
   x: 42,
-  y: 38,
+  y: 30,
+});
+
+const LEARNING_ATTACK_TEXT_STYLE = Object.freeze({
+  ...BATTLE_UI_TEXT_STYLE,
+  fontSize: '18px',
+  lineSpacing: -3,
+  wordWrap: { width: 410, useAdvancedWrap: true },
+  maxLines: 2,
 });
 
 const PLAYER_INPUT_CURSOR_POS = Object.freeze({
@@ -158,6 +166,16 @@ export class BattleMenu {
       /** @type {Phaser.GameObjects.Text} */
       (this.#moveSelectionSubBattleMenuPhaserContainerGameObject.getAt(index)).setText(attack.name);
     });
+  }
+
+  showQuizAttackMenu(question, choices = []) {
+    this.#battleTextGameObjectLine1.setText(String(question || 'Choisis la bonne réponse')).setAlpha(1);
+    this.#battleTextGameObjectLine2.setText('').setAlpha(1);
+    const texts = this.#moveSelectionSubBattleMenuPhaserContainerGameObject.getAll().filter((item) => item.type === 'Text');
+    texts.forEach((text, index) => text.setText(String(choices[index] || '-')));
+    this.#selectedAttackMenuOption = ATTACK_MOVE_OPTIONS.MOVE_1;
+    this.#attackBattleMenuCursorPhaserImageGameObject.setPosition(ATTACK_MENU_CURSOR_POS.x, ATTACK_MENU_CURSOR_POS.y);
+    this.showMonsterAttackSubMenu();
   }
 
   /**
@@ -408,10 +426,10 @@ export class BattleMenu {
     }
 
     this.#moveSelectionSubBattleMenuPhaserContainerGameObject = this.#scene.add.container(0, 448, [
-      this.#scene.add.text(55, 22, attackNames[0], BATTLE_UI_TEXT_STYLE),
-      this.#scene.add.text(240, 22, attackNames[1], BATTLE_UI_TEXT_STYLE),
-      this.#scene.add.text(55, 70, attackNames[2], BATTLE_UI_TEXT_STYLE),
-      this.#scene.add.text(240, 70, attackNames[3], BATTLE_UI_TEXT_STYLE),
+      this.#scene.add.text(62, 8, attackNames[0], LEARNING_ATTACK_TEXT_STYLE),
+      this.#scene.add.text(542, 8, attackNames[1], LEARNING_ATTACK_TEXT_STYLE),
+      this.#scene.add.text(62, 68, attackNames[2], LEARNING_ATTACK_TEXT_STYLE),
+      this.#scene.add.text(542, 68, attackNames[3], LEARNING_ATTACK_TEXT_STYLE),
       this.#attackBattleMenuCursorPhaserImageGameObject,
     ]);
     this.hideMonsterAttackSubMenu();
@@ -658,13 +676,13 @@ export class BattleMenu {
         );
         return;
       case ATTACK_MOVE_OPTIONS.MOVE_2:
-        this.#attackBattleMenuCursorPhaserImageGameObject.setPosition(228, ATTACK_MENU_CURSOR_POS.y);
+        this.#attackBattleMenuCursorPhaserImageGameObject.setPosition(522, ATTACK_MENU_CURSOR_POS.y);
         return;
       case ATTACK_MOVE_OPTIONS.MOVE_3:
-        this.#attackBattleMenuCursorPhaserImageGameObject.setPosition(ATTACK_MENU_CURSOR_POS.x, 86);
+        this.#attackBattleMenuCursorPhaserImageGameObject.setPosition(ATTACK_MENU_CURSOR_POS.x, 90);
         return;
       case ATTACK_MOVE_OPTIONS.MOVE_4:
-        this.#attackBattleMenuCursorPhaserImageGameObject.setPosition(228, 86);
+        this.#attackBattleMenuCursorPhaserImageGameObject.setPosition(522, 90);
         return;
       default:
         exhaustiveGuard(this.#selectedAttackMenuOption);
