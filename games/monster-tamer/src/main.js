@@ -31,6 +31,20 @@ const blockNativeGameGesture = (event) => event.preventDefault();
   document.addEventListener(type, blockNativeGameGesture, { capture: true });
 });
 
+// Le canvas Phaser n'a besoin d'aucun geste natif. Le verrouiller directement
+// empêche la loupe, la sélection et « Copier / Consulter » sur iOS sans bloquer
+// les commandes tactiles HTML placées au-dessus.
+const protectPhaserCanvas = () => {
+  const canvas = game.canvas;
+  if (!canvas || canvas.dataset.touchProtected === 'true') return;
+  canvas.dataset.touchProtected = 'true';
+  canvas.draggable = false;
+  ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach((type) => {
+    canvas.addEventListener(type, blockNativeGameGesture, { passive: false, capture: true });
+  });
+};
+protectPhaserCanvas();
+
 game.scene.add(SCENE_KEYS.PRELOAD_SCENE, PreloadScene);
 game.scene.add(SCENE_KEYS.WORLD_SCENE, WorldScene);
 game.scene.add(SCENE_KEYS.BATTLE_SCENE, BattleScene);
@@ -66,22 +80,22 @@ const createMobileControls = () => {
   controls.className = 'mobile-game-controls';
   controls.innerHTML = `
     <div class="mobile-dpad">
-      <button data-code="ArrowUp" data-key="ArrowUp" data-hold="true" aria-label="Haut">▲</button>
-      <button data-code="ArrowLeft" data-key="ArrowLeft" data-hold="true" aria-label="Gauche">◀</button>
-      <button data-code="ArrowDown" data-key="ArrowDown" data-hold="true" aria-label="Bas">▼</button>
-      <button data-code="ArrowRight" data-key="ArrowRight" data-hold="true" aria-label="Droite">▶</button>
+      <div class="mobile-control" data-code="ArrowUp" data-key="ArrowUp" data-hold="true" aria-label="Haut">▲</div>
+      <div class="mobile-control" data-code="ArrowLeft" data-key="ArrowLeft" data-hold="true" aria-label="Gauche">◀</div>
+      <div class="mobile-control" data-code="ArrowDown" data-key="ArrowDown" data-hold="true" aria-label="Bas">▼</div>
+      <div class="mobile-control" data-code="ArrowRight" data-key="ArrowRight" data-hold="true" aria-label="Droite">▶</div>
     </div>
     <div class="mobile-actions">
-      <button data-code="ShiftLeft" data-key="Shift" aria-label="Retour">B</button>
-      <button class="primary" data-code="Space" data-key=" " aria-label="Valider">A</button>
-      <button class="menu" data-code="Enter" data-key="Enter" aria-label="Menu">MENU</button>
+      <div class="mobile-control" data-code="ShiftLeft" data-key="Shift" aria-label="Retour">B</div>
+      <div class="mobile-control primary" data-code="Space" data-key=" " aria-label="Valider">A</div>
+      <div class="mobile-control menu" data-code="Enter" data-key="Enter" aria-label="Menu">MENU</div>
     </div>`;
 
   const sendKey = (code, key, pressed) => window.postMessage({
     source: 'condamine', type: 'key-state', code, key, pressed
   }, '*');
 
-  controls.querySelectorAll('button').forEach((button) => {
+  controls.querySelectorAll('.mobile-control').forEach((button) => {
     const release = (event) => {
       event.preventDefault();
       sendKey(button.dataset.code, button.dataset.key, false);
