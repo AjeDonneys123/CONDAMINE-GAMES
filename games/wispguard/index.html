@@ -13,7 +13,10 @@
         overflow: hidden;
         background: #d7d7d7;
         -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
       }
+      canvas { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-user-drag: none; touch-action: none; }
       .mobile-game-controls { display: none; }
       @media (pointer: coarse), (max-width: 900px) {
         .mobile-game-controls { position: fixed; z-index: 9999; inset: 0; display: block; pointer-events: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }

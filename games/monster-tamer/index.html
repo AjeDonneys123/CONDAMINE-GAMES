@@ -15,7 +15,11 @@
         width: 100vw;
         overflow: hidden;
         background: #d7d7d7;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
       }
+      canvas { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-user-drag: none; touch-action: none; }
 
       .mobile-game-controls { display: none; }
       @media (pointer: coarse), (max-width: 900px) {

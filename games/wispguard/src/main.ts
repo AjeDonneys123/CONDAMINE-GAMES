@@ -30,6 +30,11 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
 
 const game = new Phaser.Game(gameConfig);
 
+const blockNativeGameGesture = (event: Event): void => event.preventDefault();
+(['contextmenu', 'selectstart', 'dragstart'] as const).forEach((type) => {
+  document.addEventListener(type, blockNativeGameGesture, { capture: true });
+});
+
 (window as Window & { condamineGrantBonus?: (bonus: string) => void }).condamineGrantBonus = (bonus: string): void => {
   const scene = game.scene.getScene(SCENE_KEYS.GAME_SCENE) as GameScene | undefined;
   scene?.applyEducationalBonus(bonus);

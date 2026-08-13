@@ -26,6 +26,11 @@ const game = new Phaser.Game({
   backgroundColor: '#000000',
 });
 
+const blockNativeGameGesture = (event) => event.preventDefault();
+['contextmenu', 'selectstart', 'dragstart'].forEach((type) => {
+  document.addEventListener(type, blockNativeGameGesture, { capture: true });
+});
+
 game.scene.add(SCENE_KEYS.PRELOAD_SCENE, PreloadScene);
 game.scene.add(SCENE_KEYS.WORLD_SCENE, WorldScene);
 game.scene.add(SCENE_KEYS.BATTLE_SCENE, BattleScene);
