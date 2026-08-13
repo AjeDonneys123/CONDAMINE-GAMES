@@ -55,3 +55,45 @@ window.addEventListener('message', (event) => {
 window.addEventListener('focus', keepMobileGameActive);
 window.addEventListener('pageshow', keepMobileGameActive);
 document.addEventListener('visibilitychange', keepMobileGameActive);
+
+const createMobileControls = () => {
+  const controls = document.createElement('div');
+  controls.className = 'mobile-game-controls';
+  controls.innerHTML = `
+    <div class="mobile-dpad">
+      <button data-code="ArrowUp" data-key="ArrowUp" data-hold="true" aria-label="Haut">▲</button>
+      <button data-code="ArrowLeft" data-key="ArrowLeft" data-hold="true" aria-label="Gauche">◀</button>
+      <button data-code="ArrowDown" data-key="ArrowDown" data-hold="true" aria-label="Bas">▼</button>
+      <button data-code="ArrowRight" data-key="ArrowRight" data-hold="true" aria-label="Droite">▶</button>
+    </div>
+    <div class="mobile-actions">
+      <button data-code="ShiftLeft" data-key="Shift" aria-label="Retour">B</button>
+      <button class="primary" data-code="Space" data-key=" " aria-label="Valider">A</button>
+      <button class="menu" data-code="Enter" data-key="Enter" aria-label="Menu">MENU</button>
+    </div>`;
+
+  const sendKey = (code, key, pressed) => window.postMessage({
+    source: 'condamine', type: 'key-state', code, key, pressed
+  }, '*');
+
+  controls.querySelectorAll('button').forEach((button) => {
+    const release = (event) => {
+      event.preventDefault();
+      sendKey(button.dataset.code, button.dataset.key, false);
+      keepMobileGameActive();
+    };
+    button.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      button.setPointerCapture?.(event.pointerId);
+      keepMobileGameActive();
+      sendKey(button.dataset.code, button.dataset.key, true);
+      if (!button.dataset.hold) window.setTimeout(() => sendKey(button.dataset.code, button.dataset.key, false), 90);
+    });
+    button.addEventListener('pointerup', release);
+    button.addEventListener('pointercancel', release);
+    button.addEventListener('contextmenu', (event) => event.preventDefault());
+  });
+  document.body.appendChild(controls);
+};
+
+createMobileControls();
