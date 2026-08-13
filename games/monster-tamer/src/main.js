@@ -97,6 +97,16 @@ const createMobileControls = () => {
     button.addEventListener('pointerup', release);
     button.addEventListener('pointercancel', release);
     button.addEventListener('contextmenu', (event) => event.preventDefault());
+    button.addEventListener('touchstart', (event) => {
+      event.preventDefault();
+      keepMobileGameActive();
+      sendKey(button.dataset.code, button.dataset.key, true);
+    }, { passive: false });
+    button.addEventListener('touchmove', (event) => event.preventDefault(), { passive: false });
+    button.addEventListener('touchend', (event) => {
+      event.preventDefault();
+      sendKey(button.dataset.code, button.dataset.key, false);
+    }, { passive: false });
   });
   document.body.appendChild(controls);
 };

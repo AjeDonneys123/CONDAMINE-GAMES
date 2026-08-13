@@ -92,6 +92,15 @@ const createMobileControls = (): void => {
     button.addEventListener('pointerup', release);
     button.addEventListener('pointercancel', release);
     button.addEventListener('contextmenu', (event) => event.preventDefault());
+    button.addEventListener('touchstart', (event) => {
+      event.preventDefault();
+      send(true);
+    }, { passive: false });
+    button.addEventListener('touchmove', (event) => event.preventDefault(), { passive: false });
+    button.addEventListener('touchend', (event) => {
+      event.preventDefault();
+      send(false);
+    }, { passive: false });
   });
   controls.addEventListener('contextmenu', (event) => event.preventDefault());
   controls.addEventListener('selectstart', (event) => event.preventDefault());
