@@ -31,6 +31,16 @@ const blockNativeGameGesture = (event) => event.preventDefault();
   document.addEventListener(type, blockNativeGameGesture, { capture: true });
 });
 
+// Sur Safari/iOS, protéger seulement le canvas ne suffit pas en paysage : les
+// marges de mise à l'échelle restent sélectionnables. Toute la page du jeu est
+// donc neutralisée, sauf les commandes qui gèrent elles-mêmes leurs touch events.
+['touchstart', 'touchmove'].forEach((type) => {
+  document.addEventListener(type, (event) => {
+    if (event.target?.closest?.('.mobile-control')) return;
+    event.preventDefault();
+  }, { passive: false, capture: true });
+});
+
 // Le canvas Phaser n'a besoin d'aucun geste natif. Le verrouiller directement
 // empêche la loupe, la sélection et « Copier / Consulter » sur iOS sans bloquer
 // les commandes tactiles HTML placées au-dessus.

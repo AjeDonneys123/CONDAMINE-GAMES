@@ -957,7 +957,13 @@ export class WorldScene extends BaseScene {
         (property) => property.name === TILED_EVENT_PROPERTY.ID
       )?.value;
 
-      if (viewedEvents.includes(eventId)) {
+      // Les événements 1 et 2 sont l'introduction mère + professeur. Ils sont
+      // désactivés sans dépendre du type (string/number) des anciennes données.
+      if (['1', '2'].includes(String(eventId))) {
+        continue;
+      }
+
+      if (viewedEvents.some((viewedEventId) => String(viewedEventId) === String(eventId))) {
         continue;
       }
 
