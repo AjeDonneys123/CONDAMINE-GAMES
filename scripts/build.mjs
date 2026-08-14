@@ -16,8 +16,7 @@ await cp(resolve(root, 'games/monster-tamer'), resolve(dist, 'monster-tamer'), {
     '/deploy',
     '/docs',
     '/.github',
-    '/.vscode',
-    '/src/types'
+    '/.vscode'
   ].some((segment) => source.includes(segment)),
 });
 await mkdir(resolve(dist, 'simple-rpg'), { recursive: true });
