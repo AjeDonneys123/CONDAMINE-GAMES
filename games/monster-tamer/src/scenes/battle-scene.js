@@ -106,14 +106,8 @@ export class BattleScene extends BaseScene {
   #availableMonstersUiContainerForNpc;
   /** @type {EnemyBattleNpc | undefined} */
   #enemyBattleNpc;
-  /** @type {object | null} */
-  #currentDefensivePosture;
-  /** @type {Phaser.GameObjects.Container | null} */
-  #defensivePostureContainer;
   /** @type {(() => void) | null} */
   #cleanupContextListener;
-  /** @type {number} */
-  #expectedPlayerAttackIndex;
   /** @type {number} */
   #playerAttackMultiplier;
   /** @type {number} */
@@ -162,10 +156,7 @@ export class BattleScene extends BaseScene {
       this.#skipAnimations = false;
     }
 
-    this.#currentDefensivePosture = null;
-    this.#defensivePostureContainer = null;
     this.#cleanupContextListener = null;
-    this.#expectedPlayerAttackIndex = -1;
     this.#playerAttackMultiplier = 1;
     this.#playerQuizCorrectIndex = -1;
   }
@@ -216,7 +207,6 @@ export class BattleScene extends BaseScene {
       if (this.#cleanupContextListener) {
         this.#cleanupContextListener();
       }
-      this.#hideDefensivePosture();
     });
 
     this.#createBattleStateMachine();
@@ -1084,7 +1074,6 @@ export class BattleScene extends BaseScene {
   }
 
   #preparePlayerQuiz() {
-    this.#hideDefensivePosture();
     const lesson = this.#getPlayerLesson();
     const quiz = Array.isArray(lesson?.quiz) ? lesson.quiz : [];
     if (!quiz.length) {
@@ -1099,35 +1088,7 @@ export class BattleScene extends BaseScene {
     this.#battleMenu.showQuizAttackMenu(question.question, choices);
   }
 
-  #prepareDefensivePosture() {
-    this.#hideDefensivePosture();
-    const lesson = this.#getPlayerLesson();
-    const points = (lesson?.mainPoints || []).slice(0, this.#activePlayerMonster.attacks.length);
-    if (!points.length) {
-      this.#expectedPlayerAttackIndex = -1;
-      return;
-    }
-    this.#expectedPlayerAttackIndex = Phaser.Math.Between(0, points.length - 1);
-    const point = points[this.#expectedPlayerAttackIndex];
-    const clues = [...(point.subPoints || []), ...(point.keywords || [])].filter(Boolean);
-    const clue = clues.length ? clues[Phaser.Math.Between(0, clues.length - 1)] : point.text;
-    const panel = this.add.rectangle(512, 238, 680, 76, 0x111827, 0.94).setStrokeStyle(3, 0xfacc15);
-    const label = this.add.text(512, 225, 'LE POKÉMON SE DÉFEND :', {
-      fontFamily: 'Arial', fontSize: '16px', color: '#fde047', fontStyle: 'bold', align: 'center'
-    }).setOrigin(0.5);
-    const text = this.add.text(512, 250, clue, {
-      fontFamily: 'Arial', fontSize: '17px', color: '#ffffff', align: 'center', wordWrap: { width: 620 }
-    }).setOrigin(0.5);
-    this.#defensivePostureContainer = this.add.container(0, 0, [panel, label, text]).setDepth(100);
-  }
-
-  #hideDefensivePosture() {
-    this.#defensivePostureContainer?.destroy(true);
-    this.#defensivePostureContainer = null;
-  }
-
   #requestEnemyQuiz() {
-    this.#hideDefensivePosture();
     const lesson = this.#getEnemyLesson();
     if (!lesson || !window.CondaWebGame) return Promise.resolve(true);
     return new Promise((resolve) => {

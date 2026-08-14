@@ -22,11 +22,13 @@ const ATTACK_MENU_CURSOR_POS = Object.freeze({
 
 const LEARNING_ATTACK_TEXT_STYLE = Object.freeze({
   ...BATTLE_UI_TEXT_STYLE,
-  fontSize: '18px',
+  fontSize: '20px',
   lineSpacing: -3,
-  wordWrap: { width: 410, useAdvancedWrap: true },
+  wordWrap: { width: 420, useAdvancedWrap: true },
   maxLines: 2,
 });
+
+const QUIZ_QUESTION_TEXT_STYLE = Object.freeze({ fontFamily: 'Arial', fontSize: '25px', color: '#ffffff', fontStyle: 'bold', align: 'center', wordWrap: { width: 760, useAdvancedWrap: true }, maxLines: 3 });
 
 const PLAYER_INPUT_CURSOR_POS = Object.freeze({
   y: 488,
@@ -39,6 +41,8 @@ export class BattleMenu {
   #mainBattleMenuPhaserContainerGameObject;
   /** @type {Phaser.GameObjects.Container} */
   #moveSelectionSubBattleMenuPhaserContainerGameObject;
+  #quizQuestionPhaserContainerGameObject;
+  #quizQuestionTextGameObject;
   /** @type {Phaser.GameObjects.Text} */
   #battleTextGameObjectLine1;
   /** @type {Phaser.GameObjects.Text} */
@@ -106,6 +110,7 @@ export class BattleMenu {
     this.#createMainInfoPane();
     this.#createMainBattleMenu();
     this.#createMonsterAttackSubMenu();
+    this.#createQuizQuestionPanel();
     this.#createPlayerInputCursor();
 
     // Conditionally disable FLEE button
@@ -156,23 +161,20 @@ export class BattleMenu {
    * @returns {void}
    */
   updateMonsterAttackSubMenu() {
-    this.#moveSelectionSubBattleMenuPhaserContainerGameObject.getAll().forEach((gameObject) => {
-      if (gameObject.type === 'text') {
-        /** @type {Phaser.GameObjects.Text} */
-        (gameObject).setText('-');
-      }
-    });
+    const texts = this.#moveSelectionSubBattleMenuPhaserContainerGameObject.getAll().filter((gameObject) => gameObject.type === 'Text');
+    texts.forEach((text) => text.setText('-'));
     this.#activePlayerMonster.attacks.forEach((attack, index) => {
-      /** @type {Phaser.GameObjects.Text} */
-      (this.#moveSelectionSubBattleMenuPhaserContainerGameObject.getAt(index)).setText(attack.name);
+      texts[index]?.setText(attack.name);
     });
   }
 
   showQuizAttackMenu(question, choices = []) {
-    this.#battleTextGameObjectLine1.setText(String(question || 'Choisis la bonne réponse')).setAlpha(1);
+    this.#battleTextGameObjectLine1.setText('').setAlpha(0);
     this.#battleTextGameObjectLine2.setText('').setAlpha(1);
     const texts = this.#moveSelectionSubBattleMenuPhaserContainerGameObject.getAll().filter((item) => item.type === 'Text');
     texts.forEach((text, index) => text.setText(String(choices[index] || '-')));
+    this.#quizQuestionTextGameObject.setText(String(question || 'Choisis la bonne réponse'));
+    this.#quizQuestionPhaserContainerGameObject.setAlpha(1);
     this.#selectedAttackMenuOption = ATTACK_MOVE_OPTIONS.MOVE_1;
     this.#attackBattleMenuCursorPhaserImageGameObject.setPosition(ATTACK_MENU_CURSOR_POS.x, ATTACK_MENU_CURSOR_POS.y);
     this.showMonsterAttackSubMenu();
@@ -220,6 +222,7 @@ export class BattleMenu {
   hideMonsterAttackSubMenu() {
     this.#activeBattleMenu = ACTIVE_BATTLE_MENU.BATTLE_MAIN;
     this.#moveSelectionSubBattleMenuPhaserContainerGameObject.setAlpha(0);
+    this.#quizQuestionPhaserContainerGameObject?.setAlpha(0);
   }
 
   /**
@@ -425,14 +428,23 @@ export class BattleMenu {
       attackNames.push(this.#activePlayerMonster.attacks[i]?.name || '-');
     }
 
+    const answerPanel = (x, y) => this.#scene.add.rectangle(x, y, 504, 58, 0xf8f4ff, 1).setStrokeStyle(4, 0x905ac2, 1);
     this.#moveSelectionSubBattleMenuPhaserContainerGameObject = this.#scene.add.container(0, 448, [
-      this.#scene.add.text(62, 8, attackNames[0], LEARNING_ATTACK_TEXT_STYLE),
-      this.#scene.add.text(542, 8, attackNames[1], LEARNING_ATTACK_TEXT_STYLE),
-      this.#scene.add.text(62, 68, attackNames[2], LEARNING_ATTACK_TEXT_STYLE),
-      this.#scene.add.text(542, 68, attackNames[3], LEARNING_ATTACK_TEXT_STYLE),
+      answerPanel(256, 31), answerPanel(768, 31), answerPanel(256, 93), answerPanel(768, 93),
+      this.#scene.add.text(62, 9, attackNames[0], LEARNING_ATTACK_TEXT_STYLE),
+      this.#scene.add.text(542, 9, attackNames[1], LEARNING_ATTACK_TEXT_STYLE),
+      this.#scene.add.text(62, 69, attackNames[2], LEARNING_ATTACK_TEXT_STYLE),
+      this.#scene.add.text(542, 69, attackNames[3], LEARNING_ATTACK_TEXT_STYLE),
       this.#attackBattleMenuCursorPhaserImageGameObject,
-    ]);
+    ]).setDepth(90);
     this.hideMonsterAttackSubMenu();
+  }
+
+  #createQuizQuestionPanel() {
+    const panel = this.#scene.add.rectangle(512, 266, 830, 118, 0x111827, 0.96).setStrokeStyle(4, 0xfacc15, 1);
+    const label = this.#scene.add.text(512, 228, 'QUESTION DU QCM', { fontFamily: 'Arial', fontSize: '15px', color: '#fde047', fontStyle: 'bold', align: 'center' }).setOrigin(0.5);
+    this.#quizQuestionTextGameObject = this.#scene.add.text(512, 270, '', QUIZ_QUESTION_TEXT_STYLE).setOrigin(0.5);
+    this.#quizQuestionPhaserContainerGameObject = this.#scene.add.container(0, 0, [panel, label, this.#quizQuestionTextGameObject]).setDepth(90).setAlpha(0);
   }
 
   /**
