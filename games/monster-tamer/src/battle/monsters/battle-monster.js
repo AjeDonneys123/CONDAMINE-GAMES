@@ -94,6 +94,33 @@ export class BattleMonster {
     return this._monsterDetails.currentLevel;
   }
 
+  get learningLessonIndex() {
+    return Math.max(0, Number(this._monsterDetails.learningLessonIndex || 0));
+  }
+
+  setLearningIdentity(lessonTitle, attackNames = []) {
+    const title = String(lessonTitle || '').trim();
+    if (title) {
+      this._monsterDetails.name = title;
+      this._monsterNameText
+        .setText(title)
+        .setFontSize(20)
+        .setLineSpacing(-4)
+        .setWordWrapWidth(520, true)
+        .setFixedSize(520, 44);
+      this._monsterHealthBarLevelText.setVisible(false);
+    }
+    const baseAttacks = [...this._monsterAttacks];
+    const targetAttackCount = Math.min(4, attackNames.filter((name) => String(name || '').trim()).length);
+    while (this._monsterAttacks.length < targetAttackCount && baseAttacks.length) {
+      this._monsterAttacks.push({ ...baseAttacks[this._monsterAttacks.length % baseAttacks.length] });
+    }
+    this._monsterAttacks = this._monsterAttacks.slice(0, targetAttackCount || this._monsterAttacks.length);
+    attackNames.slice(0, targetAttackCount).forEach((name, index) => {
+      if (this._monsterAttacks[index] && String(name || '').trim()) this._monsterAttacks[index].name = String(name).trim();
+    });
+  }
+
   /**
    * @param {import('../../types/typedef.js').Monster} monster
    * @returns {void}

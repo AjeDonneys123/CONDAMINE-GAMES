@@ -6,6 +6,8 @@ export class KeyboardComponent extends InputComponent {
   #attackKey: Phaser.Input.Keyboard.Key;
   #actionKey: Phaser.Input.Keyboard.Key;
   #enterKey: Phaser.Input.Keyboard.Key;
+  #virtualDown = new Set<string>();
+  #virtualJustDown = new Set<string>();
 
   constructor(keyboardPlugin: Phaser.Input.Keyboard.KeyboardPlugin) {
     super();
@@ -20,36 +22,52 @@ export class KeyboardComponent extends InputComponent {
     // return/enter = Start, Open Inventory
   }
 
+  setVirtualKey(code: string, pressed: boolean): void {
+    if (pressed) {
+      if (!this.#virtualDown.has(code)) this.#virtualJustDown.add(code);
+      this.#virtualDown.add(code);
+      return;
+    }
+    this.#virtualDown.delete(code);
+    this.#virtualJustDown.delete(code);
+  }
+
+  #consumeVirtual(code: string): boolean {
+    if (!this.#virtualJustDown.has(code)) return false;
+    this.#virtualJustDown.delete(code);
+    return true;
+  }
+
   get isUpDown(): boolean {
-    return this.#cursorKeys.up.isDown;
+    return this.#cursorKeys.up.isDown || this.#virtualDown.has('ArrowUp');
   }
 
   get isUpJustDown(): boolean {
-    return Phaser.Input.Keyboard.JustDown(this.#cursorKeys.up);
+    return Phaser.Input.Keyboard.JustDown(this.#cursorKeys.up) || this.#consumeVirtual('ArrowUp');
   }
 
   get isDownDown(): boolean {
-    return this.#cursorKeys.down.isDown;
+    return this.#cursorKeys.down.isDown || this.#virtualDown.has('ArrowDown');
   }
 
   get isDownJustDown(): boolean {
-    return Phaser.Input.Keyboard.JustDown(this.#cursorKeys.down);
+    return Phaser.Input.Keyboard.JustDown(this.#cursorKeys.down) || this.#consumeVirtual('ArrowDown');
   }
 
   get isLeftDown(): boolean {
-    return this.#cursorKeys.left.isDown;
+    return this.#cursorKeys.left.isDown || this.#virtualDown.has('ArrowLeft');
   }
 
   get isRightDown(): boolean {
-    return this.#cursorKeys.right.isDown;
+    return this.#cursorKeys.right.isDown || this.#virtualDown.has('ArrowRight');
   }
 
   get isActionKeyJustDown(): boolean {
-    return Phaser.Input.Keyboard.JustDown(this.#actionKey);
+    return Phaser.Input.Keyboard.JustDown(this.#actionKey) || this.#consumeVirtual('KeyX');
   }
 
   get isAttackKeyJustDown(): boolean {
-    return Phaser.Input.Keyboard.JustDown(this.#attackKey);
+    return Phaser.Input.Keyboard.JustDown(this.#attackKey) || this.#consumeVirtual('KeyZ');
   }
 
   get isSelectKeyJustDown(): boolean {
@@ -57,6 +75,6 @@ export class KeyboardComponent extends InputComponent {
   }
 
   get isEnterKeyJustDown(): boolean {
-    return Phaser.Input.Keyboard.JustDown(this.#enterKey);
+    return Phaser.Input.Keyboard.JustDown(this.#enterKey) || this.#consumeVirtual('Enter');
   }
 }

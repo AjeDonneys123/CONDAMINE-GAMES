@@ -39,6 +39,7 @@
     getContext: () => context,
     getLessons: () => context?.lessons || [],
     getLessonById: (lessonId) => (context?.lessons || []).find((lesson) => lesson.id === lessonId) || null,
+    openLearningGuide: () => send('open-learning-guide'),
     on(type, callback) {
       const callbacks = listeners.get(type) || [];
       callbacks.push(callback);
