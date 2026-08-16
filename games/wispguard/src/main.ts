@@ -107,5 +107,7 @@ const createMobileControls = (): void => {
   document.body.appendChild(controls);
 };
 
-createMobileControls();
+// En mode intégré, les commandes sont fournies par CondaWeb. Les dupliquer
+// dans l'iframe provoque des appuis répétés et des directions concurrentes.
+if (window.parent === window) createMobileControls();
 document.getElementById('game-container')?.addEventListener('contextmenu', (event) => event.preventDefault());
