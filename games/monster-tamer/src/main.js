@@ -26,6 +26,21 @@ const game = new Phaser.Game({
   backgroundColor: '#000000',
 });
 
+window.addEventListener('error', (event) => {
+  window.parent?.postMessage?.({
+    source: 'condamine-game',
+    type: 'game-error',
+    message: String(event?.message || 'Erreur de chargement du jeu'),
+  }, '*');
+});
+window.addEventListener('unhandledrejection', (event) => {
+  window.parent?.postMessage?.({
+    source: 'condamine-game',
+    type: 'game-error',
+    message: String(event?.reason?.message || event?.reason || 'Ressource du jeu indisponible'),
+  }, '*');
+});
+
 const blockNativeGameGesture = (event) => event.preventDefault();
 ['contextmenu', 'selectstart', 'dragstart'].forEach((type) => {
   document.addEventListener(type, blockNativeGameGesture, { capture: true });

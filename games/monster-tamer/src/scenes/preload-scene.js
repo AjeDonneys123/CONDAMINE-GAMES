@@ -236,9 +236,12 @@ export class PreloadScene extends BaseScene {
 
     // load audio
     this.load.setPath('assets/audio/xDeviruchi');
-    this.load.audio(AUDIO_ASSET_KEYS.MAIN, 'And-the-Journey-Begins.wav');
-    this.load.audio(AUDIO_ASSET_KEYS.BATTLE, 'Decisive-Battle.wav');
-    this.load.audio(AUDIO_ASSET_KEYS.TITLE, 'Title-Theme.wav');
+    // Les WAV d'origine dépassaient 63 Mo et laissaient un écran noir pendant
+    // leur téléchargement sur téléphone. Les versions AAC gardent la musique
+    // tout en ramenant ce préchargement à environ 3,6 Mo.
+    this.load.audio(AUDIO_ASSET_KEYS.MAIN, 'And-the-Journey-Begins.m4a');
+    this.load.audio(AUDIO_ASSET_KEYS.BATTLE, 'Decisive-Battle.m4a');
+    this.load.audio(AUDIO_ASSET_KEYS.TITLE, 'Title-Theme.m4a');
     this.load.setPath('assets/audio/leohpaz');
     this.load.audio(AUDIO_ASSET_KEYS.CLAW, '03_Claw_03.wav');
     this.load.audio(AUDIO_ASSET_KEYS.GRASS, '03_Step_grass_03.wav');

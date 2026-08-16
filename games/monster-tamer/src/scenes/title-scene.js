@@ -66,6 +66,12 @@ export class TitleScene extends BaseScene {
   create() {
     super.create();
 
+    window.parent?.postMessage?.({
+      source: 'condamine-game',
+      type: 'game-playable',
+      scene: SCENE_KEYS.TITLE_SCENE,
+    }, '*');
+
     this.#selectedMenuOption = MAIN_MENU_OPTIONS.NEW_GAME;
     this.#isContinueButtonEnabled = dataManager.store.get(DATA_MANAGER_STORE_KEYS.GAME_STARTED) || false;
 
