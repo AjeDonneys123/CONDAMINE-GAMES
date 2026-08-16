@@ -135,6 +135,6 @@ const createMobileControls = () => {
   document.body.appendChild(controls);
 };
 
-// CondaWeb fournit son propre pavé tactile fiable autour de l'iframe. Garder
-// aussi celui du jeu envoyait chaque commande deux fois sur téléphone.
-if (window.parent === window) createMobileControls();
+// Une seule couche tactile, directement dans le jeu. Cette architecture évite
+// les pertes de gestes Safari entre la page parente et l'iframe.
+createMobileControls();
