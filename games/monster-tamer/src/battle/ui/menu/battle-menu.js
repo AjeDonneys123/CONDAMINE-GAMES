@@ -28,7 +28,7 @@ const LEARNING_ATTACK_TEXT_STYLE = Object.freeze({
   maxLines: 2,
 });
 
-const QUIZ_QUESTION_TEXT_STYLE = Object.freeze({ fontFamily: 'Arial', fontSize: '25px', color: '#ffffff', fontStyle: 'bold', align: 'center', wordWrap: { width: 760, useAdvancedWrap: true }, maxLines: 3 });
+const QUIZ_QUESTION_TEXT_STYLE = Object.freeze({ fontFamily: 'Arial', fontSize: '25px', color: '#ffffff', stroke: '#111827', strokeThickness: 6, shadow: { offsetX: 0, offsetY: 3, color: '#000000', blur: 5, fill: true }, fontStyle: 'bold', align: 'center', wordWrap: { width: 760, useAdvancedWrap: true }, maxLines: 3 });
 
 const PLAYER_INPUT_CURSOR_POS = Object.freeze({
   y: 488,
@@ -428,7 +428,7 @@ export class BattleMenu {
       attackNames.push(this.#activePlayerMonster.attacks[i]?.name || '-');
     }
 
-    const answerPanel = (x, y) => this.#scene.add.rectangle(x, y, 504, 58, 0xf8f4ff, 1).setStrokeStyle(4, 0x905ac2, 1);
+    const answerPanel = (x, y) => this.#scene.add.rectangle(x, y, 504, 58, 0xf8f4ff, 0.78).setStrokeStyle(4, 0x905ac2, 0.9);
     this.#moveSelectionSubBattleMenuPhaserContainerGameObject = this.#scene.add.container(0, 448, [
       answerPanel(256, 31), answerPanel(768, 31), answerPanel(256, 93), answerPanel(768, 93),
       this.#scene.add.text(62, 9, attackNames[0], LEARNING_ATTACK_TEXT_STYLE),
@@ -441,8 +441,10 @@ export class BattleMenu {
   }
 
   #createQuizQuestionPanel() {
-    const panel = this.#scene.add.rectangle(512, 266, 830, 118, 0x111827, 0.96).setStrokeStyle(4, 0xfacc15, 1);
-    const label = this.#scene.add.text(512, 228, 'QUESTION DU QCM', { fontFamily: 'Arial', fontSize: '15px', color: '#fde047', fontStyle: 'bold', align: 'center' }).setOrigin(0.5);
+    // Aucun fond opaque : les deux créatures restent visibles pendant la
+    // question. Le contour et l'ombre du texte garantissent la lisibilité.
+    const panel = this.#scene.add.rectangle(512, 266, 830, 118, 0x111827, 0).setStrokeStyle(3, 0xfacc15, 0.7);
+    const label = this.#scene.add.text(512, 228, 'QUESTION DU QCM', { fontFamily: 'Arial', fontSize: '15px', color: '#fde047', stroke: '#111827', strokeThickness: 4, fontStyle: 'bold', align: 'center' }).setOrigin(0.5);
     this.#quizQuestionTextGameObject = this.#scene.add.text(512, 270, '', QUIZ_QUESTION_TEXT_STYLE).setOrigin(0.5);
     this.#quizQuestionPhaserContainerGameObject = this.#scene.add.container(0, 0, [panel, label, this.#quizQuestionTextGameObject]).setDepth(90).setAlpha(0);
   }

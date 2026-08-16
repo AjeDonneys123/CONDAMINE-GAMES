@@ -355,10 +355,10 @@ export class BattleScene extends BaseScene {
       return;
     }
 
-    this.#requestEnemyQuiz().then((quizSuccess) => this.#battleMenu.updateInfoPaneMessageNoInputRequired(
+    this.#battleMenu.updateInfoPaneMessageNoInputRequired(
       `foe ${this.#activeEnemyMonster.name} used ${
         this.#activeEnemyMonster.attacks[this.#activeEnemyAttackIndex].name
-      } (${quizSuccess ? 'attaque atténuée' : 'attaque renforcée'})`,
+      }`,
       () => {
         // play attack animation based on the selected attack
         // when attack is finished, play damage animation and then update health bar
@@ -371,8 +371,7 @@ export class BattleScene extends BaseScene {
             ATTACK_TARGET.PLAYER,
             () => {
               this.#activePlayerMonster.playTakeDamageAnimation(() => {
-                const multiplier = quizSuccess ? 0.35 : 1.8;
-                this.#activePlayerMonster.takeDamage(Math.max(1, Math.round(this.#activeEnemyMonster.baseAttack * multiplier)), () => {
+                this.#activePlayerMonster.takeDamage(Math.max(1, Math.round(this.#activeEnemyMonster.baseAttack)), () => {
                   callback();
                 });
               });
@@ -380,7 +379,7 @@ export class BattleScene extends BaseScene {
           );
         });
       }
-    ));
+    );
   }
 
   /**
@@ -1088,18 +1087,4 @@ export class BattleScene extends BaseScene {
     this.#battleMenu.showQuizAttackMenu(question.question, choices);
   }
 
-  #requestEnemyQuiz() {
-    const lesson = this.#getEnemyLesson();
-    if (!lesson || !window.CondaWebGame) return Promise.resolve(true);
-    return new Promise((resolve) => {
-      let settled = false;
-      const cleanup = window.CondaWebGame.on('qcm-result', (event) => {
-        if (settled) return;
-        settled = true;
-        cleanup();
-        resolve(event?.success === true);
-      });
-      window.CondaWebGame.send('request-qcm', { lessonId: lesson.id, lessonTitle: lesson.title });
-    });
-  }
 }
